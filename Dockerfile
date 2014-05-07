@@ -1,49 +1,49 @@
 # GrooveBasin image
+# ORIGINAL MAINTAINER Simon Morvan garphy@zone84.net
+# Modified to use stackbrew and remove supervisord
+# use stackbrew's super-small ubuntu
+FROM stackbrew/ubuntu:12.04
 
-# use the ubuntu base image provided by dotCloud
-FROM ubuntu:precise
+ENV DEBIAN_FRONTEND noninteractive
 
-MAINTAINER Simon Morvan garphy@zone84.net
+RUN apt-get update && apt-get install -y python-software-properties && \
+    apt-add-repository ppa:andrewrk/libgroove && \
+    apt-add-repository ppa:chris-lea/node.js && \
+    apt-get update
 
-# /sbin/initctl hack
-RUN dpkg-divert --local --rename --add /sbin/initctl
-RUN rm /sbin/initctl
-RUN ln -s /bin/true /sbin/initctl
+# Install build tools, libgroove, nodejs
+RUN apt-get -y install build-essential && \
+    apt-get -y install libgroove-dev libgrooveplayer-dev \
+    libgrooveloudness-dev libgroovefingerprinter-dev && \
+    apt-get -y install nodejs
 
-# Install apt-add-repositor
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install python-software-properties
+RUN npm -g install groovebasin
 
-# Add some PPAs
-RUN apt-add-repository ppa:andrewrk/libgroove
-RUN apt-add-repository ppa:chris-lea/node.js
-RUN apt-get update
+# Remove stuff for building:
+RUN apt-get -y remove libgroove-dev libgrooveplayer-dev \
+    libgrooveloudness-dev libgroovefingerprinter-dev \
+    manpages manpages-dev g++ gcc cpp make ucf \
+    python-software-properties unattended-upgrades \
+    g++-4.6 gcc-4.6 cpp-4.6
 
-# Install build & core tools
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential git vim-tiny
+RUN useradd -m groovebasin -G audio && \
+    mkdir /music && touch /music/.dummy && \
+    chown groovebasin:groovebasin /music && \
+    mkdir /groove && touch /groove/.dummy && \
+    chown groovebasin:groovebasin /groove
 
-# Install libgroove
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install libgroove-dev libgrooveplayer-dev libgrooveloudness-dev libgroovefingerprinter-dev
+USER groovebasin
 
-# Install node.js
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install nodejs
-
-# Install python easy_install
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install python-pip python-setuptools
-
-# Install supervisor
-RUN easy_install supervisor
-
-RUN mkdir /home/groovebasin && cd /home/groovebasin && git clone https://github.com/andrewrk/groovebasin.git
-RUN cd /home/groovebasin/groovebasin && npm run build
-
-ADD ./start.sh /start.sh
-ADD ./foreground.sh /home/groovebasin/foreground.sh
-ADD ./supervisord.conf /etc/supervisord.conf
-
-
-RUN chmod 755 /start.sh /home/groovebasin/foreground.sh
+ENV HOME /home/groovebasin
+ENV NODE_PATH /usr/lib/node_modules
+RUN ln -s /music /home/groovebasin/music && \
+    ln -s /groove /home/groovebasin/groovebasin.db
+WORKDIR /home/groovebasin
 
 EXPOSE 16242
 EXPOSE 6600
+
 VOLUME /music
-CMD ["/bin/bash", "/start.sh"]
+VOLUME /groove
+
+ENTRYPOINT ["node","/usr/lib/node_modules/groovebasin/lib/server.js"]
