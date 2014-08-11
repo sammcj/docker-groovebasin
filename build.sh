@@ -25,6 +25,8 @@ chown groovebasin:groovebasin /home/groovebasin/*
 
 su -c 'git clone https://github.com/andrewrk/groovebasin.git /home/groovebasin/groovebasin-build' \
     -s /bin/bash groovebasin
+su -c 'cd /home/groovebasin/groovebasin-build && git checkout tags/1.2.1' \
+    -s /bin/bash groovebasin
 
 # Every once in a while npm fails because some server
 # returns a bad package. Trying this twice seems to
