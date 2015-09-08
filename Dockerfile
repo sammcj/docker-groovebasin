@@ -2,7 +2,7 @@
 # ORIGINAL MAINTAINER Simon Morvan garphy@zone84.net
 # Modified to use stackbrew and remove supervisord
 # use stackbrew's super-small ubuntu
-FROM stackbrew/ubuntu:12.04
+FROM stackbrew/ubuntu:14.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
